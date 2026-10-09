@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Campus Library System</title>
+</head>
+<body>
+    <h1>Campus Library: Available Books</h1>
+    <ul id="catalog"></ul>
+    <footer>
+        <hr>
+        <p>Deployment Version Tag: <strong id="build-tag">v1.0.0</strong></p>
+    </footer>
+    <script>
+        fetch('/api/catalog/')
+            .then(res => res.json())
+            .then(data => {
+                const list = document.getElementById('catalog');
+                data.forEach(book => {
+                    const item = document.createElement('li');
+                    item.textContent = `${book.title} by ${book.author} (${book.available_copies} copies remaining)`;
+                    list.appendChild(item);
+                });
+            });
+    </script>
+</body>
+</html>

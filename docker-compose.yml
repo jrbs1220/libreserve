@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  proxy:
+    build: ./proxy
+    image: libreserve/proxy:${TAG:-latest}
+    ports:
+      - "8080:80"
+    depends_on:
+      - frontend
+      - catalog-api
+      - borrow-api
+    restart: unless-stopped
+    networks:
+      - lib-net
+
+  frontend:
+    build: ./frontend
+    image: libreserve/frontend:${TAG:-latest}
+    restart: unless-stopped
+    networks:
+      - lib-net
+
+  catalog-api:
+    build:
+      context: ./catalog-api
+      target: production
+    image: libreserve/catalog-api:${TAG:-latest}
+    environment:
+      DB_HOST: db
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - lib-net
+
+  borrow-api:
+    build:
+      context: ./borrow-api
+      target: production
+    image: libreserve/borrow-api:${TAG:-latest}
+    environment:
+      DB_HOST: db
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - lib-net
+
+  db:
+    build: ./db
+    image: libreserve/db:${TAG:-latest}
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - lib-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - lib-net
+
+volumes:
+  lib-db-data:
+
+networks:
+  lib-net:
+    driver: bridge
+    
